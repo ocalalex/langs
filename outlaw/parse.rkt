@@ -1,7 +1,58 @@
 #lang racket
-(provide parse parse-define parse-e parse-library)
+;;(provide parse parse-define parse-e parse-library)
+(provide parse-mod parse-define parse-e parse-prov parse-req)
 (require "stdlib.rkt" "ast.rkt")
 
+'((provide a) (require "b.rkt") (define (a x) (+ (b x) (b x))) (a 10))
+
+;; [Listof S-Expr] -> Mod
+(define (parse-mod s)
+  (match s
+    ['() (Mod '() '() '() '())]
+    [(cons (cons 'provide fs) xs)
+     (match (parse-mod xs)
+        [(Mod rs ps ds e)
+         (Mod rs (append (parse-prov fs) ps) ds e)])] ;; need to define parse-prov
+    [(cons (cons 'require files) xs)
+     (match (parse-mod xs)
+        [(Mod rs ps ds e)
+         (Mod (append (parse-req files) rs) ps ds e)])]
+    [(cons (and (cons (? def-keyword?) _) d) '())
+     (Mod '() '() (parse-define d) (parse-e '(void)))]
+    [(cons (and (cons (? def-keyword?) _) d) xs)
+     (match (parse-mod xs)
+        [(Mod rs ps ds e)
+         (Mod rs ps (append (parse-define d) ds) e)])]
+    [(cons (cons 'module+ _) xs) ; ignore submodules for now
+     (parse-mod xs)]
+    [(cons expr xs)
+     (match (parse-mod xs)
+        [(Mod rs ps ds e)
+        (Mod '() '() '() (parse-e expr))])]
+    [_ (error "program parse error" s)]
+  )
+)
+
+
+(define (parse-prov fs)
+  (match fs
+    ['()
+     '()]
+    [(cons f xs)
+     (cons (Prov f) (parse-prov xs))]
+  )
+)
+
+(define (parse-req files)
+  (match files
+    ['()
+     '()]
+    [(cons file xs)
+     (if (string? file) (cons (Req file) (parse-req xs)) (parse-req xs))]
+  )
+)
+
+#|
 ;; [Listof S-Expr] -> Prog
 (define (parse s)
   (match s
@@ -31,10 +82,13 @@
         (Prog (cons (Defn (gensym) (parse-e e)) ds))])]
     [_ (error "program parse error" s)]))
 
+|#
+
 (define (def-keyword? x)
   (or (eq? x 'define)
       (eq? x 'struct)))
 
+#|
 ;; [Listof S-Expr] -> Lib
 (define (parse-library s)
   (match s
@@ -42,7 +96,7 @@
            (cons (cons 'require _) ds))
      (match (parse ds)
        [(Prog ds)
-        (Lib ids ds)])]))
+        (Lib ids ds)])]))|#
 
 ;; [Listof S-Expr] -> [Listof Defn]
 (define (parse-ds s)

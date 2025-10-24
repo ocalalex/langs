@@ -93,3 +93,18 @@
 (struct PStr (s))
 (struct PStruct (n ps))
 (struct PPred (e))
+
+;; type Module =
+;; (Mod Reqs Provs Defns Expr)
+(struct Mod (rs ps ds e) #:transparent)
+
+;; type Reqs = [Listof Req]
+;; type Req =
+;; | String       interp: file paths
+
+;; type Provs = [Listof Prov]
+;; type Prov =
+;; | Symbol       interp: provided identifiers
+
+(struct Req (s))
+(struct Prov (s))
