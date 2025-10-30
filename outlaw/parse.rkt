@@ -1,14 +1,12 @@
 #lang racket
 ;;(provide parse parse-define parse-e parse-library)
-(provide parse-mod parse-define parse-e parse-prov parse-req)
+(provide parse-mod parse-define parse-e parse-prov parse-req parse-library)
 (require "stdlib.rkt" "ast.rkt")
-
-'((provide a) (require "b.rkt") (define (a x) (+ (b x) (b x))) (a 10))
 
 ;; [Listof S-Expr] -> Mod
 (define (parse-mod s)
   (match s
-    ['() (Mod '() '() '() '())]
+    ['() (Mod '() '() '() (Defn (gensym) (parse-e '(void))))]
     [(cons (cons 'provide fs) xs)
      (match (parse-mod xs)
         [(Mod rs ps ds e)
@@ -18,7 +16,7 @@
         [(Mod rs ps ds e)
          (Mod (append (parse-req files) rs) ps ds e)])]
     [(cons (and (cons (? def-keyword?) _) d) '())
-     (Mod '() '() (parse-define d) (parse-e '(void)))]
+     (Mod '() '() (parse-define d) (Defn (gensym) (parse-e '(void))))]
     [(cons (and (cons (? def-keyword?) _) d) xs)
      (match (parse-mod xs)
         [(Mod rs ps ds e)
@@ -28,13 +26,13 @@
     [(cons expr xs)
      (match (parse-mod xs)
         [(Mod rs ps ds e)
-        (Mod '() '() '() (parse-e expr))])]
+        (Mod rs ps ds (Defn (gensym) (parse-e expr)))])]
     [_ (error "program parse error" s)]
   )
 )
 
 
-(define (parse-prov fs)
+(define (parse-prov fs) ;; add all-from-out and such
   (match fs
     ['()
      '()]
@@ -88,15 +86,15 @@
   (or (eq? x 'define)
       (eq? x 'struct)))
 
-#|
+
 ;; [Listof S-Expr] -> Lib
 (define (parse-library s)
   (match s
     [(cons (cons 'provide ids)
            (cons (cons 'require _) ds))
-     (match (parse ds)
-       [(Prog ds)
-        (Lib ids ds)])]))|#
+     (match (parse-mod ds)
+       [(Mod rs ps ds e)
+        (Lib ids (append ds (list e)))])]))
 
 ;; [Listof S-Expr] -> [Listof Defn]
 (define (parse-ds s)

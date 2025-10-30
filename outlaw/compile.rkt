@@ -13,6 +13,48 @@
          "compile-expr.rkt"
          "compile-literals.rkt")
 
+(define (compile-mod m)
+  (match m
+    [(Mod rs ps ds e)
+     (let ((gs (append stdlib-ids (define-ids (append ds (list e))))))
+       (seq (externs)
+            (map (lambda (i) (Extern (symbol->label i))) stdlib-ids)
+            (Global 'entry)
+            (Label 'entry)
+
+            (Push rbx) ; save non-volatile registers
+            (Push r12)
+            (Push r15)
+
+            (Mov rbx rdi) ; recv heap pointer
+            (init-symbol-table m)
+            (init-lib)
+            
+            (compile-defines (append ds (list e)) gs)
+            (compile-variable (last-define-id (append ds (list e))) '() gs)
+
+            (Pop r15) ; restore non-volatile registers
+            (Pop r12)
+            (Pop rbx)
+
+            (Ret)
+            (compile-lambda-defines (lambdas m) gs)
+            (Global 'raise_error_align)
+            (Label 'raise_error_align)
+            (pad-stack)
+            (Mov rdi 0) ; null arg
+            (Call 'raise_error)
+
+          ;; one way to make `cons' a function instead of a primitive
+          ;;cons-function
+          
+          (Data)
+          (compile-literals m)))]))
+
+
+
+
+
 ;; type CEnv = [Listof Id]
 
 (define (compile p)
@@ -158,4 +200,4 @@
             
             (compile-lambda-defines (lambdas-ds ds) g)
             (Data)
-            (compile-literals (Prog ds))))]))
+            (compile-literals (Mod '() '() ds '()))))])) ;; check this line

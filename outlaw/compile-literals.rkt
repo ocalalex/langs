@@ -6,8 +6,8 @@
          "registers.rkt")
 
 ;; Prog -> Asm
-(define (compile-literals p)
-  (append-map compile-literal (literals p)))
+(define (compile-literals m)
+  (append-map compile-literal (literals m)))
 
 ;; Symbol -> Asm
 (define (compile-literal s)
@@ -21,8 +21,8 @@
 
 ;; Prog -> Asm
 ;; Call intern_symbol on every symbol in the program
-(define (init-symbol-table p)
-  (match (symbols p)
+(define (init-symbol-table m)
+  (match (symbols m)
     ['() (seq)]
     [ss  (seq (Sub 'rsp 8)
               (append-map init-symbol ss)
@@ -34,12 +34,12 @@
        (Call 'intern_symbol)))
 
 ;; Prog -> [Listof Symbol]
-(define (literals p)
-  (remove-duplicates (map to-symbol (literals* p)) eq?))
+(define (literals m)
+  (remove-duplicates (map to-symbol (literals* m)) eq?))
 
 ;; Prog -> [Listof Symbol]
-(define (symbols p)
-  (remove-duplicates (filter symbol? (literals* p)) eq?))
+(define (symbols m)
+  (remove-duplicates (filter symbol? (literals* m)) eq?))
 
 ;; (U String Symbol) -> Symbol
 (define (to-symbol s)
@@ -48,9 +48,9 @@
       s))
 
 ;; Prog -> [Listof (U Symbol String)]
-(define (literals* p)
-  (match p
-    [(Prog ds)
+(define (literals* m)
+  (match m
+    [(Mod rs ps ds e)
      (append-map literals-d ds)]))
 
 ;; Defn -> [Listof (U Symbol String)]

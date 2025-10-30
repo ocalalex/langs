@@ -9,4 +9,4 @@
   (begin
     (read-line) ; ignore #lang racket line
     (current-shared? #t)
-    (asm-display (compile (parse (read-all))))))
+    (asm-display (compile-mod (parse-mod (read-all))))))

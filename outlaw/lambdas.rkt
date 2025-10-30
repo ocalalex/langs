@@ -4,10 +4,10 @@
 
 ;; Prog -> [Listof Lam]
 ;; List all of the lambda expressions in p
-(define (lambdas p)
-  (match p
-    [(Prog ds)
-     (lambdas-ds ds)]))
+(define (lambdas m)
+  (match m
+    [(Mod rs ps ds e)
+     (lambdas-ds (append ds (list e)))]))
 
 ;; Defns -> [Listof Lam]
 ;; List all of the lambda expressions in ds

@@ -391,7 +391,6 @@
   (if (zero? n)
       '()
       (cons x (make-list (sub1 n) x))))
-
 (define (list? xs)
   (match xs
     ['() #t]
