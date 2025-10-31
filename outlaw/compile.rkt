@@ -16,9 +16,13 @@
 (define (compile-mod m)
   (match m
     [(Mod rs ps ds e)
+     (define def-ids (define-ids ds))
+     (define check-undefined (filter (lambda (p) (not (memq p def-ids))) ps))
+     (if (not (empty? check-undefined)) (error "not all promised provides are present") (void))
      (let ((gs (append stdlib-ids (define-ids (append ds (list e))))))
        (seq (externs)
             (map (lambda (i) (Extern (symbol->label i))) stdlib-ids)
+            
             (Global 'entry)
             (Label 'entry)
 
